@@ -1,0 +1,9 @@
+# Direct package versions observed in the staging verification environment.
+# This is a reference set, not a full transitive lock file.
+numpy==2.5.3
+scipy==1.18.1
+psutil==7.2.2
+threadpoolctl==3.7.0
+h5py==3.16.0
+faiss-cpu==1.15.1
+numba==0.68.0

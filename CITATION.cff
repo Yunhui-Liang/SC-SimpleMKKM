@@ -1,0 +1,9 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite the SC-SimpleMKKM PDCAT 2026 manuscript."
+title: "SC-SimpleMKKM: Sparse Self-Tuned Simple Multiple Kernel k-Means for Multi-View Clustering"
+authors:
+  - family-names: Du
+    given-names: Liang
+version: 0.8.4.post2
+date-released: 2026-10-21
+type: software

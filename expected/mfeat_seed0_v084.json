@@ -1,0 +1,19 @@
+{
+  "source_run_id": "mfeat_mvc__sparse_self__seed000__thrauto",
+  "source_software_version": "0.8.4",
+  "current_repository_version": "0.8.4.post2",
+  "dataset": "UCI Multiple Features (MFeat)",
+  "n": 2000,
+  "views": 6,
+  "clusters": 10,
+  "seed": 0,
+  "kernel": "one rbf_self_tuned kernel per view",
+  "local_scale_k": 7,
+  "support_k": 10,
+  "ACC": 0.8725,
+  "NMI": 0.8794354695958252,
+  "ARI": 0.8262795901539949,
+  "historical_pipeline_seconds": 3.8954437999927904,
+  "tolerance_for_quality_metrics": 0.002,
+  "note": "Historical seed-0 reference from the 0.8.4 archived run. Compare quality metrics; runtime is not expected to match across environments."
+}

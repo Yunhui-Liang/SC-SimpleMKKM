@@ -1,0 +1,52 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "scsimplemkkm"
+version = "0.8.4.post2"
+description = "Sparse self-tuned SimpleMKKM for multi-view clustering"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+  "numpy>=1.24",
+  "scipy>=1.10",
+  "psutil>=5.9",
+  "threadpoolctl>=3.2",
+  "h5py>=3.10",
+]
+
+[project.optional-dependencies]
+ann-faiss = ["faiss-cpu>=1.8"]
+ann-hnsw = ["hnswlib>=0.8"]
+ann-pynndescent = ["pynndescent>=0.5"]
+parallel = ["numba>=0.59"]
+sklearn-fallback = ["scikit-learn>=1.3"]
+io = ["h5py>=3.10"]
+paper = ["matplotlib>=3.7"]
+
+[project.scripts]
+scsimplemkkm = "scsimplemkkm.cli:main"
+scsimplemkkm-benchdata = "scsimplemkkm.benchdata:main"
+scsimplemkkm-data = "scsimplemkkm.datasets:main"
+scsimplemkkm-paperdata = "scsimplemkkm.paperdata:main"
+scsimplemkkm-paperfigs = "scsimplemkkm.paperfigs:main"
+scsimplemkkm-paperlab = "scsimplemkkm.paperlab:main"
+scsimplemkkm-paperlab-web = "scsimplemkkm.paperlab_web:main"
+scsimplemkkm-papertables = "scsimplemkkm.papertables:main"
+scsimplemkkm-web = "scsimplemkkm.webapp:main"
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+scsimplemkkm = [
+  "webui/*",
+  "paperlabui/*",
+  "sampledata/SHA256SUMS",
+  "sampledata/*/manifest.json",
+  "sampledata/*/*.npy",
+]

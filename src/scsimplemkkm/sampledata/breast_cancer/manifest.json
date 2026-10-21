@@ -1,0 +1,12 @@
+{
+  "id": "breast_cancer",
+  "dataset": "Breast Cancer Wisconsin",
+  "n": 569,
+  "d": 30,
+  "classes": 2,
+  "dtype": "float32",
+  "l2_normalized": true,
+  "bundled": true,
+  "purpose": "small dense-reference smoke/correctness test",
+  "source": "scikit-learn bundled benchmark dataset (packaged as ready-to-run NumPy arrays)"
+}

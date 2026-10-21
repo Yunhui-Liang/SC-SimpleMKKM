@@ -1,0 +1,12 @@
+{
+  "id": "iris",
+  "dataset": "Iris",
+  "n": 150,
+  "d": 4,
+  "classes": 3,
+  "dtype": "float32",
+  "l2_normalized": true,
+  "bundled": true,
+  "purpose": "small dense-reference smoke/correctness test",
+  "source": "scikit-learn bundled benchmark dataset (packaged as ready-to-run NumPy arrays)"
+}

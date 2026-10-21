@@ -1,0 +1,88 @@
+{
+  "schema": "scsimplemkkm.paperdata.v1",
+  "id": "mfeat_mvc",
+  "dataset": "UCI Multiple Features (MFeat)",
+  "benchmark_role": "standard_mvc",
+  "n": 2000,
+  "classes": 10,
+  "view_count": 6,
+  "view_dims": [
+    76,
+    216,
+    64,
+    240,
+    47,
+    6
+  ],
+  "views": [
+    {
+      "name": "view_fou",
+      "path": "view_fou.npy",
+      "n": 2000,
+      "d": 76,
+      "dtype": "float32",
+      "l2_normalized": true,
+      "k": 10
+    },
+    {
+      "name": "view_fac",
+      "path": "view_fac.npy",
+      "n": 2000,
+      "d": 216,
+      "dtype": "float32",
+      "l2_normalized": true,
+      "k": 10
+    },
+    {
+      "name": "view_kar",
+      "path": "view_kar.npy",
+      "n": 2000,
+      "d": 64,
+      "dtype": "float32",
+      "l2_normalized": true,
+      "k": 10
+    },
+    {
+      "name": "view_pix",
+      "path": "view_pix.npy",
+      "n": 2000,
+      "d": 240,
+      "dtype": "float32",
+      "l2_normalized": true,
+      "k": 10
+    },
+    {
+      "name": "view_zer",
+      "path": "view_zer.npy",
+      "n": 2000,
+      "d": 47,
+      "dtype": "float32",
+      "l2_normalized": true,
+      "k": 10
+    },
+    {
+      "name": "view_mor",
+      "path": "view_mor.npy",
+      "n": 2000,
+      "d": 6,
+      "dtype": "float32",
+      "l2_normalized": true,
+      "k": 10
+    }
+  ],
+  "labels": "labels.npy",
+  "dtype": "float32",
+  "row_l2_normalized": true,
+  "recommended_engine": "scalable_sparse",
+  "recommended_k": 10,
+  "recommended_kernel_preset": "rbf_self_tuned",
+  "recommended_K_scale": 7,
+  "purpose": "standard real MVC quality benchmark",
+  "provenance": {
+    "source_url": "https://archive.ics.uci.edu/static/public/72/multiple%2Bfeatures.zip",
+    "doi": "10.24432/C5HC70",
+    "license": "CC BY 4.0",
+    "description": "Six aligned handwritten-digit feature sets: Fourier, profile, Karhunen-Love, pixels, Zernike and morphology.",
+    "source_sha256": "898a50a7637f1ed5a8cee2493aaa0e7f4d52795c412f59b0969ec7c3046ee7bd"
+  }
+}

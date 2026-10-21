@@ -1,0 +1,12 @@
+{
+  "id": "wine",
+  "dataset": "Wine",
+  "n": 178,
+  "d": 13,
+  "classes": 3,
+  "dtype": "float32",
+  "l2_normalized": true,
+  "bundled": true,
+  "purpose": "small dense-reference smoke/correctness test",
+  "source": "scikit-learn bundled benchmark dataset (packaged as ready-to-run NumPy arrays)"
+}

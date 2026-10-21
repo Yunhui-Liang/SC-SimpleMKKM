@@ -1,0 +1,55 @@
+{
+  "dataset_manifest": "data/examples/mfeat_mvc/manifest.json",
+  "engine": "scalable_sparse",
+  "mmap": true,
+  "seed": 0,
+  "k": 10,
+  "clusters": 10,
+  "auto_clusters_from_ground_truth": true,
+  "search": "exact",
+  "ann_backend": "auto",
+  "candidate_factor": 4,
+  "query_batch_size": 8192,
+  "support_mode": "directed",
+  "support_policy": "ranking_grouped",
+  "diffusion_power": 1,
+  "memory_mode": "auto",
+  "solver": {
+    "inner_solver": "auto",
+    "inner_tol": 0.0001,
+    "inner_max_iter": 250,
+    "outer_tol": 0.00001,
+    "outer_max_iter": 120,
+    "spmm_backend": "auto"
+  },
+  "discretization": {
+    "backend": "batched_lloyd",
+    "block_rows": 262144,
+    "max_iter": 40,
+    "tol": 0.0001,
+    "init_sample": 200000,
+    "init_restarts": 8,
+    "init_local_iter": 10
+  },
+  "trajectory": {"enabled": false},
+  "spectral_diagnostics": {"enabled": false},
+  "evaluation": {"enabled": true, "block_rows": 262144},
+  "resources": {
+    "max_ram_fraction": 0.75,
+    "reserve_gb": 4,
+    "max_cpu_fraction": 0.95,
+    "leave_cores": 1,
+    "monitor_interval": 1,
+    "allow_oom_risk": false
+  },
+  "kernel_bank": {
+    "mode": "shared",
+    "preset": "rbf_self_tuned",
+    "local_scale_k": 7
+  },
+  "run_id": "mfeat_rbf_self_tuned_seed000",
+  "task_name": "UCI MFeat reproducibility run",
+  "run_dir": "outputs/mfeat_rbf_self_tuned_seed000",
+  "out": "outputs/mfeat_rbf_self_tuned_seed000/result.npz",
+  "artifacts": {"embedding_sample": 20000}
+}

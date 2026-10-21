@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>SC-SimpleMKKM</title>
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+<header>
+  <div>
+    <h1>SC-SimpleMKKM</h1>
+    <p>Storage–Computation Co-Designed SimpleMKKM · 单机工程控制台</p>
+  </div>
+  <div id="envBadge" class="badge">environment…</div>
+</header>
+<main>
+  <section class="panel">
+    <div class="panel-title"><div><h2>0. 数据集快捷入口</h2><p>单视图基准、已经转换过的 MVC 数据和模拟 MVC 共用同一入口；选择后自动填好所有 views、ground truth、c、Support k 和推荐引擎。已转换的 MSRCV1/Scene15/COIL20 等会从多视图缓存目录自动发现。</p></div></div>
+    <div class="advanced-grid">
+      <label>数据集 <select id="datasetSelect"></select></label>
+      <label>下载/缓存目录 <input id="datasetRoot" type="text" value="datasets" /></label>
+      <button id="prepareDataset" class="primary" type="button">一键准备并载入</button>
+      <label>ScaleSynth 样本数 <select id="scaleN"><option>3000</option><option>10000</option><option>50000</option><option>200000</option><option selected>1000000</option></select></label>
+      <label>ScaleSynth MVC 维数（逗号分隔=多个 views） <input id="scaleDims" type="text" value="32,24,16" /></label>
+      <label>模拟噪声 <input id="scaleNoise" type="number" value="0.30" min="0" step="0.05" /></label>
+      <button id="prepareScale" class="secondary">生成并载入模拟 MVC</button>
+    </div>
+    <div id="datasetInfo" class="plan muted">选择数据集后，这里显示 n / d / c / 推荐引擎 / 是否已就绪。</div>
+    <div id="datasetStatus" class="muted">数据任务 idle。</div>
+    <details>
+      <summary><b>直接导入多视图 MATLAB 数据（X / Xs cell array + Y labels）</b></summary>
+      <div class="advanced-grid">
+        <label>.mat 路径 <input id="mvMatPath" type="text" placeholder="D:/data/MSRCV1.mat" /></label>
+        <label>视图变量名 <input id="mvViewsKey" type="text" value="auto" placeholder="auto 或 Xs" /></label>
+        <label>标签变量名 <input id="mvLabelsKey" type="text" value="auto" placeholder="auto 或 Y" /></label>
+        <label>缓存目录 <input id="mvCacheRoot" type="text" value="dataset_cache" /></label><label>PaperLab 数据目录 <input id="paperDataRoot" type="text" value="paper_workspace/data" /></label><button type="button" id="saveSharedWorkspace">保存共享目录</button>
+        <label>数据集名（可空） <input id="mvDatasetName" type="text" placeholder="自动取文件名" /></label>
+        <label>Support k（k<sub>support</sub>） <input id="mvImportK" type="number" min="1" value="10" /></label>
+        <button id="inspectMvMat" class="secondary" type="button">检查视图 / 标签</button>
+        <button id="prepareMvMat" class="primary" type="button">转换并载入所有 views</button>
+        <label>MVC .mat 目录（批量，可空） <input id="mvMatDir" type="text" placeholder="D:/data/MVC_suite" /></label>
+        <label>文件模式 <input id="mvMatPattern" type="text" value="*.mat" /></label>
+        <button id="prepareMvMatDir" class="secondary" type="button">批量转换目录并加入数据集列表</button>
+      </div>
+      <p id="mvMatInfo" class="muted">auto 可识别 <code>X</code> 或 <code>Xs</code> 等视图变量，以及 <code>Y</code> 等标签变量；也可手动填写变量名。支持 MATLAB v5 / v7.3，稀疏视图会分块转换为 float32、行 L2 归一化的 NPY。批量模式逐个处理文件，错误单独报告。</p>
+    </details>
+  </section>
+  <section class="panel">
+    <div class="panel-title"><div><h2>1. 数据视图</h2><p>每个 view 一份特征矩阵；样本数和样本顺序必须一致。</p></div><button id="addView" class="secondary">+ 添加视图</button></div>
+    <div class="toolbar"><label class="inline"><input id="linkK" type="checkbox" checked /> 各视图共享 Support k</label><label>Support k（k<sub>support</sub>，稀疏图邻居数） <input id="globalK" type="number" min="1" value="10" /></label></div>
+    <div id="views"></div>
+    <div class="button-row"><button id="checkPaths" class="secondary">检查路径</button><button id="planBtn" class="secondary">估算资源</button></div>
+    <div id="pathCheck" class="muted"></div>
+  </section>
+
+  <section class="panel grid2">
+    <div>
+      <h2>2. 聚类任务</h2>
+      <label>运行引擎 <select id="engine"><option value="scalable_sparse">SC-SimpleMKKM（稀疏/大规模）</option><option value="reference_dense">Standard Dense SimpleMKKM（标准参考）</option></select></label>
+      <label>类簇数 c <input id="clusters" type="number" min="2" value="10" /></label>
+      <label class="inline"><input id="autoClusters" type="checkbox" checked /> 有 ground truth 时自动把 c 同步到真实类别数（防止漏改）</label>
+      <label>Ground truth（可空，用于外部指标） <input id="groundTruth" type="text" placeholder="/data/labels.npy" /></label>
+      <label>任务名 <input id="taskName" type="text" placeholder="例如 Letter-k10-RBF7" /></label>
+      <label>任务根目录 <input id="runsRoot" type="text" value="runs" /></label>
+      <p class="muted">每次点击运行都会生成唯一 Run ID，并自动写入 <code>runs/&lt;RunID&gt;/</code>。历史任务不会被覆盖。</p>
+    </div>
+    <div>
+      <h2>公开参数</h2>
+      <div class="bigline"><span>结构参数</span><strong>c + k<sub>support,v</sub></strong></div>
+      <p class="muted">k<sub>support</sub> 只控制稀疏 support 的保留邻居数。Self-tuned RBF 的 K<sub>scale</sub> 是另一参数（第 K<sub>scale</sub> 近邻用于局部尺度），二者绝不覆盖；稀疏模式要求 K<sub>scale</sub>≤k<sub>support</sub>。</p>
+      <h3>离散化</h3>
+      <label>Backend <select id="discBackend"><option value="batched_lloyd">Batched full-data Lloyd（大规模默认）</option><option value="standard_replicate_lloyd">Standard replicated Lloyd（10×，标准参考）</option><option value="faiss">FAISS sampled k-means（可选工程后端）</option></select></label>
+      <label class="inline"><input id="evalEnabled" type="checkbox" checked /> 计算内部指标；若提供 ground truth 同时计算外部指标</label>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2>2.5 标准协议 vs 大规模协议</h2>
+    <div class="table-wrap"><table><thead><tr><th>环节</th><th>Standard Dense SimpleMKKM</th><th>SC-SimpleMKKM</th></tr></thead><tbody>
+      <tr><td>输入特征</td><td>row L2 normalization</td><td>相同</td></tr>
+      <tr><td>核函数</td><td>同一 kernel bank，计算全部 n² 对</td><td>同一 kernel bank，仅在 support 上精确计算 φ</td></tr>
+      <tr><td>核预处理</td><td>官方 kcenter → knorm</td><td>数学等价的 implicit centering + diagonal normalization</td></tr>
+      <tr><td>SimpleMKKM 外层</td><td>官方 reduced gradient + projected step + golden search</td><td>完全相同</td></tr>
+      <tr><td>top-c 子空间</td><td>dense fused kernel + eigsh/eigs 语义</td><td>sparse implicit operator + LOBPCG</td></tr>
+      <tr><td>离散化</td><td>row-normalized H + replicated full Lloyd</td><td>row-normalized H + bounded-memory full-data Lloyd</td></tr>
+      <tr><td>瓶颈</td><td>O(mn²) 存储/计算，作为小规模 reference</td><td>O(nk) support / 单机百万—千万路线</td></tr>
+    </tbody></table></div>
+    <p id="engineHint" class="muted">当前：SC-SimpleMKKM。k_support 参与稀疏 support；标准 Dense 引擎不使用 k_support，但 Self-tuned 的 K_scale 仍然生效。</p>
+  </section>
+
+  <section class="panel">
+    <div class="panel-title"><div><h2>3. 核配置</h2><p>默认复现历史 12 核；可让所有视图共享同一 kernel bank，也可为每个 view 单独配置。核配置会进入资源估算、日志和最终结果。</p></div></div>
+    <div class="toolbar">
+      <label>配置方式 <select id="kernelMode"><option value="shared">所有视图共享 kernel bank</option><option value="per_view">每个视图独立 kernel bank</option></select></label>
+      <label id="kernelViewWrap" hidden>当前编辑视图 <select id="kernelViewSelect"></select></label>
+      <label>预设 <select id="kernelPreset"><option value="rbf7" selected>RBF 7 核（论文主协议）</option><option value="rbf1">RBF 单核（中心 α=1）</option><option value="rbf_self_tuned">RBF 单核（Self-tuned local scale, K=7）</option><option value="historical12">历史 12 核</option></select></label>
+      <label id="singleRbfScaleWrap" hidden>单核 α <input id="singleRbfScale" type="number" min="0.000001" step="any" value="1" /></label>
+      <label id="selfTunedKWrap" hidden>Self-tuned K<sub>scale</sub> <input id="selfTunedK" type="number" min="1" step="1" value="7" /></label>
+      <button id="applyKernelPreset" class="secondary" type="button">应用预设</button>
+      <button id="copyKernelAllViews" class="secondary" type="button">复制到所有视图</button>
+      <button id="addKernel" class="secondary" type="button">+ 新增核</button>
+    </div>
+    <div class="table-wrap kernel-table-wrap">
+      <table class="kernel-table"><thead><tr><th>启用</th><th>名称</th><th>类型</th><th>核参数（degree / α / K_scale）</th><th>support family</th><th>实际 family</th><th></th></tr></thead><tbody id="kernelRows"></tbody></table>
+    </div>
+    <p id="kernelSummary" class="muted"></p>
+    <div id="effectiveParamBox" class="plan muted">有效参数：等待配置。</div>
+    <p class="muted">Global RBF 约定：<code>exp(-d²/(α·d̄²_v))</code>，其中 <code>d̄²_v</code> 是每个 view 自己的全局平均平方距离。单核主对照固定 <b>α=1</b>（即 RBF7 的中心核），不看标签、不逐数据集挑最优参数；因此同一个 α 在不同 view 上仍会自动得到各自的实际带宽。Self-tuned RBF 使用 <code>exp(-d²/(σ_iσ_j))</code>，<code>σ_i</code> 取第 <b>K_scale</b> 近邻距离（默认 7，Zelnik-Manor–Perona）；<b>k_support</b> 是稀疏图保留邻居数（默认 10）。两者是独立参数：稀疏模式要求 <code>K_scale ≤ k_support</code>，Dense 模式只使用 K_scale。auto support 规则：偶次 <code>s^p</code> 用 abs-cosine，其余用 cosine。</p>
+  </section>
+
+  <section class="panel">
+    <h2>4. 单机资源策略</h2>
+    <div class="advanced-grid">
+      <label>内存模式 <select id="memoryMode"><option value="auto">auto（32GB自动低内存）</option><option value="laptop32">laptop32：SSD文件映射</option><option value="standard">standard：速度优先</option></select></label>
+      <label>工作盘路径（推荐 NVMe） <input id="workspaceDir" type="text" placeholder="D:/SC_Workspace" value="runs/workspace" /></label>
+      <label>最大 RAM 使用比例 <input id="ramFrac" type="number" min="0.2" max="0.98" step="0.05" value="0.80" /></label>
+      <label>给系统预留 RAM (GB) <input id="reserveGb" type="number" min="0" step="1" value="4" /></label>
+      <label>最大 CPU 比例 <input id="cpuFrac" type="number" min="0.1" max="1" step="0.05" value="0.85" /></label>
+      <label>预留物理核心 <input id="leaveCores" type="number" min="0" step="1" value="2" /></label>
+      <label>线程上限（0=自动） <input id="maxThreads" type="number" min="0" step="1" value="0" /></label>
+      <label>监控间隔 (s) <input id="monitorInterval" type="number" min="0.25" step="0.25" value="1" /></label>
+    </div>
+    <label class="inline danger-text"><input id="allowOom" type="checkbox" /> 即使资源预估超预算也允许运行（不建议）</label>
+    <div id="planBox" class="plan muted">尚未估算。</div>
+  </section>
+
+  <section class="panel">
+    <details>
+      <summary>高级工程设置（论文中固定）</summary>
+      <div class="advanced-grid">
+        <label>邻居搜索 <select id="search"><option value="ann">ANN</option><option value="exact">Exact</option></select></label>
+        <label>ANN backend <select id="annBackend"><option value="auto">auto</option><option value="faiss_ivfsq">faiss IVF-SQ8（省内存）</option><option value="faiss_ivf">faiss IVF-Flat</option><option value="faiss">faiss HNSW</option><option value="hnswlib">hnswlib</option><option value="pynndescent">pynndescent</option><option value="sklearn">sklearn fallback</option></select></label>
+        <label>support mode <select id="supportMode"><option value="directed">directed + sym union</option><option value="mutual">mutual</option><option value="mutual_rescue">mutual + rescue</option></select></label>
+        <label>support policy <select id="supportPolicy"><option value="ranking_grouped">ranking-grouped</option><option value="shared_geometry">shared-geometry (legacy)</option></select></label>
+        <label>diffusion power <input id="diffusionPower" type="number" min="1" max="2" value="1" /></label>
+        <label>candidate factor <input id="candidateFactor" type="number" min="1" value="4" /></label>
+        <label>ANN query batch <input id="queryBatch" type="number" min="128" value="4096" /></label>
+        <label>efSearch <input id="efSearch" type="number" min="1" value="128" /></label>
+        <label>HNSW M <input id="hnswM" type="number" min="2" value="32" /></label>
+        <label>seed <input id="seed" type="number" value="0" /></label>
+        <label>Lloyd block rows <input id="discBlock" type="number" min="1024" value="262144" /></label>
+        <label>Lloyd max iter <input id="discIter" type="number" min="1" value="20" /></label>
+        <label>离散化重复数 <input id="discRestarts" type="number" min="1" value="5" /></label>
+        <label>迭代指标 full 阈值 <input id="trajFullThreshold" type="number" min="1000" value="100000" /></label>
+        <label>大规模固定 probe 数 <input id="trajProbe" type="number" min="1000" value="100000" /></label>
+        <label>每次 accepted iterate 诊断重复数 <input id="trajReplicates" type="number" min="1" value="3" /></label>
+        <label class="inline"><input id="trajEnabled" type="checkbox" checked /> 记录 accepted iterate 的 J/ACC/NMI/ARI/γ 轨迹</label>
+        <label class="inline"><input id="officialEval" type="checkbox" /> Standard 模式额外执行官方 20×10 外部评估（很慢）</label>
+        <label class="inline"><input id="spectralDiag" type="checkbox" checked /> 最终谱边界诊断（默认仅 n≤阈值）</label>
+        <label>谱诊断最大 n <input id="spectralMaxN" type="number" min="1000" value="200000" /></label>
+      </div>
+    </details>
+  </section>
+
+  <section class="panel actions">
+    <button id="runBtn" class="primary">运行新任务</button>
+    <button id="newTaskBtn" class="secondary" type="button">新任务 / 清空结果视图</button>
+    <button id="cancelBtn" class="danger" disabled>停止</button>
+    <span id="statusBadge" class="status idle">idle</span>
+    <span id="elapsed" class="muted"></span>
+    <span id="activeRunId" class="muted"></span>
+  </section>
+
+  <section class="panel">
+    <div class="panel-title"><div><h2>5. 任务历史 / 论文统计</h2><p>每次运行都是独立任务。论文统计会区分最终评估与 accepted-iterate 诊断轨迹，并按 task / engine / seed 聚合。</p></div><div><button id="paperStatsBtn" class="secondary" type="button">生成论文统计</button> <button id="refreshRuns" class="secondary" type="button">刷新</button></div></div>
+    <div id="paperStats" class="muted"></div>
+    <div id="runHistory"><p class="muted">尚未加载。</p></div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-title"><div><h2>6. 执行图与当前 Block</h2><p>教学视图：展示从数据块到 ANN、稀疏核、SpMM、QR、离散化、评估的执行链。</p></div><strong id="stagePct">0%</strong></div>
+    <div id="flow" class="flow">
+      <div data-key="normalize">数据块<br><small>L2 / float32</small></div><span>→</span>
+      <div data-key="ann">ANN 候选<br><small>index/query</small></div><span>→</span>
+      <div data-key="support">精确重排<br><small>sparse support</small></div><span>→</span>
+      <div data-key="operators">φ + PSD<br><small>implicit kernel</small></div><span>→</span>
+      <div data-key="simplemkkm">SimpleMKKM<br><small>fuse/SpMM/QR</small></div><span>→</span>
+      <div data-key="discretize">离散化<br><small>batched Lloyd</small></div><span>→</span>
+      <div data-key="evaluate">评估<br><small>internal/external</small></div>
+    </div>
+    <p id="stageText">等待运行…</p>
+    <div class="progress"><div id="progressFill"></div></div>
+    <div class="cards resource-cards six">
+      <div class="card"><span>Process CPU capacity</span><strong id="procCpu">—</strong></div>
+      <div class="card"><span>CPU cores used</span><strong id="procCores">—</strong></div>
+      <div class="card"><span>System CPU</span><strong id="sysCpu">—</strong></div>
+      <div class="card"><span>Process RAM</span><strong id="procRam">—</strong></div>
+      <div class="card"><span>RAM available</span><strong id="availRam">—</strong></div>
+      <div class="card"><span>Disk R / W</span><strong id="diskRate">—</strong></div>
+    </div>
+    <h3>Per-core CPU</h3><div id="coreHeat" class="core-heat"></div>
+    <div class="chart-grid">
+      <div><h3>CPU utilization</h3><canvas id="cpuCanvas" width="900" height="220"></canvas></div>
+      <div><h3>RAM</h3><canvas id="ramCanvas" width="900" height="220"></canvas></div>
+    </div>
+    <h3>最近 Block</h3><div id="blockTable"></div>
+    <h3>运行日志</h3><pre id="log">等待运行…</pre>
+  </section>
+
+  <section class="panel" id="resultPanel" hidden>
+    <h2>7. 结果、评估与 profile</h2>
+    <div id="summaryCards" class="cards"></div>
+    <div id="warningsBox"></div>
+    <h3>Protocol / Diagnostic</h3><div id="diagnosticSummary"></div>
+    <h3>Optimization trajectory（J ↓）</h3><p id="optimizationNote" class="muted"></p><canvas id="objCanvas" width="1000" height="260"></canvas>
+    <h3>Line-search candidate objective</h3><p class="muted">cheap search 候选值本身不要求单调；真正进入正式 objective 曲线还必须通过 strict recheck。</p><canvas id="lineSearchCanvas" width="1000" height="240"></canvas><div id="lineSearchTable"></div>
+    <h3>ACC / NMI / ARI 随 accepted outer iteration</h3><p id="trajectoryNote" class="muted"></p><canvas id="qualityCanvas" width="1000" height="260"></canvas>
+    <h3>Kernel weight trajectory</h3><canvas id="gammaCanvas" width="1000" height="300"></canvas>
+    <h3>评估指标</h3><div id="evaluation"></div>
+    <h3>阶段 profile</h3><div id="profile"></div>
+    <h3>View / Kernel Weights</h3><div id="weights"></div>
+    <h3>Graph Diagnostics</h3><div id="graphs"></div>
+    <h3>可复现 / 交接文件</h3><div id="handoff"></div><p><a id="runReportLink" href="/run-report" target="_blank">打开静态 RUN_REPORT.html</a></p>
+  </section>
+</main>
+
+<template id="viewTemplate">
+  <div class="view-row">
+    <label>名称 <input class="v-name" type="text" /></label>
+    <label>数据路径 <input class="v-path wide" type="text" placeholder="/data/view.npy" /></label>
+    <label>NPZ/MAT key <input class="v-key" type="text" placeholder="可空" /></label>
+    <label>k <input class="v-k" type="number" min="1" value="10" /></label>
+    <button class="remove danger" title="删除视图">×</button>
+  </div>
+</template>
+<script src="/app.js"></script>
+</body>
+</html>

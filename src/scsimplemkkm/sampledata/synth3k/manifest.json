@@ -1,0 +1,11 @@
+{
+  "id": "synth3k",
+  "dataset": "ScaleSynth 3K",
+  "n": 3000,
+  "d": 16,
+  "classes": 10,
+  "dtype": "float32",
+  "l2_normalized": true,
+  "bundled": true,
+  "purpose": "laptop dense-reference stress test"
+}
